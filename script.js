@@ -5,6 +5,92 @@ let currentPokemon = 1;
 let currentPokemonName = "";
 let tcgdex = null;
 
+// A build "tcgdex.browser.global.min.js" carregada via <script> só expõe
+// `window.TCGdex`, sem a classe `Query` (que só existe nos builds ESM/CJS
+// do pacote). Sem isso, `Query.create()` disparava "Query is not defined"
+// e a carta do TCG nunca era carregada. Esta classe replica exatamente a
+// implementação oficial do SDK (src/Query.ts) para funcionar no navegador.
+class Query {
+    constructor() {
+        this.params = [];
+        this.not = {
+            equal: (key, value) => {
+                this.params.push({ key, value: `neq:${value}` });
+                return this;
+            },
+            contains: (key, value) => {
+                this.params.push({ key, value: `not:${value}` });
+                return this;
+            },
+            includes: (key, value) => this.not.contains(key, value),
+            like: (key, value) => this.not.contains(key, value),
+            isNull: (key) => {
+                this.params.push({ key, value: "notnull:" });
+                return this;
+            }
+        };
+    }
+
+    static create() {
+        return new Query();
+    }
+
+    includes(key, value) {
+        return this.contains(key, value);
+    }
+
+    like(key, value) {
+        return this.contains(key, value);
+    }
+
+    contains(key, value) {
+        this.params.push({ key, value });
+        return this;
+    }
+
+    equal(key, value) {
+        this.params.push({ key, value: `eq:${value}` });
+        return this;
+    }
+
+    sort(key, order) {
+        this.params.push({ key: "sort:field", value: key });
+        this.params.push({ key: "sort:order", value: order });
+        return this;
+    }
+
+    greaterOrEqualThan(key, value) {
+        this.params.push({ key, value: `gte:${value}` });
+        return this;
+    }
+
+    lesserOrEqualThan(key, value) {
+        this.params.push({ key, value: `lte:${value}` });
+        return this;
+    }
+
+    greaterThan(key, value) {
+        this.params.push({ key, value: `gt:${value}` });
+        return this;
+    }
+
+    lesserThan(key, value) {
+        this.params.push({ key, value: `lt:${value}` });
+        return this;
+    }
+
+    isNull(key) {
+        this.params.push({ key, value: "null:" });
+        return this;
+    }
+
+    paginate(page, itemsPerPage) {
+        this.params.push({ key: "pagination:page", value: page });
+        this.params.push({ key: "pagination:itemsPerPage", value: itemsPerPage });
+        return this;
+    }
+}
+
 const elements = {
     status: document.getElementById("status"),
     card: document.getElementById("card"),
