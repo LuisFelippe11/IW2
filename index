@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Pokédex interativa">
+    <title>Pokédex Specimen</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<main class="app">
+
+    <header class="topbar">
+
+        <div class="brand">
+            <span class="status-dot"></span>
+            <span>POKÉDEX • SPECIMEN DATABASE</span>
+        </div>
+
+        <div class="top-logo">
+            <img src="logo.png" alt="Logo da Pokédex">
+        </div>
+
+        <div class="top-actions">
+            <button id="randomBtn" class="mini-btn" type="button">
+                ALEATÓRIO
+            </button>
+
+            <button id="themeBtn" class="mini-btn" type="button">
+                ◐
+            </button>
+        </div>
+
+        <form id="searchForm" class="search">
+            <input
+                id="searchInput"
+                type="search"
+                placeholder="Nome ou número do Pokémon..."
+                autocomplete="off"
+            >
+
+            <button type="submit">
+                BUSCAR
+            </button>
+        </form>
+
+    </header>
+
+    <p id="status" class="status">
+        Carregando Pokémon...
+    </p>
+
+    <section id="card" class="specimen-card">
+
+        <div class="card-header">
+
+            <div>
+                <span class="eyebrow">
+                    POKÉMON SPECIMEN CARD
+                </span>
+
+                <h1>
+                    DATABASE RECORD
+                </h1>
+              
+            </div>
+
+            <div class="badges">
+                <span>OFFICIAL DATA</span>
+                <span id="recordId">#000</span>
+            </div>
+
+        </div>
+
+        <div class="card-body">
+
+            <aside class="left-panel">
+
+                <div class="panel-title">
+                    <span id="pDex">#000</span>
+                    <span id="pGenus">SPECIES</span>
+                </div>
+
+                <div class="portrait-frame">
+                    <div class="scan-line"></div>
+
+                    <img
+                        id="pImg"
+                        src=""
+                        alt="Imagem do Pokémon"
+                    >
+                </div>
+
+                <div class="name-strip">
+                    <span id="pName">CARREGANDO</span>
+                    <span id="pIdSmall">ID 000</span>
+                </div>
+
+                <p id="pFlavor" class="flavor">
+                    Buscando informações na Pokédex...
+                </p>
+
+                <div class="measure">
+
+                    <span>
+                        ALTURA
+                        <strong id="pHeight">--</strong>
+                    </span>
+
+                    <span>
+                        PESO
+                        <strong id="pWeight">--</strong>
+                    </span>
+
+                </div>
+
+            </aside>
+
+            <section class="info-panel">
+
+                <div class="info-row highlight">
+
+                    <span>NOME</span>
+
+                    <strong id="pNameCenter">
+                        CARREGANDO
+                    </strong>
+
+                    <small id="pIdCenter">
+                        #000
+                    </small>
+
+                </div>
+
+                <div class="info-row">
+
+                    <span>TIPO</span>
+
+                    <div id="pTypes" class="type-list"></div>
+
+                </div>
+
+                <div class="info-row">
+
+                    <span>ALTURA / PESO</span>
+
+                    <strong id="pSize">--</strong>
+
+                </div>
+
+                <div class="info-row">
+
+                    <span>ORIGEM</span>
+
+                    <strong id="pOrigin">
+                        REGIÃO DESCONHECIDA
+                    </strong>
+
+                </div>
+
+                <div class="info-row">
+
+                    <span>GERAÇÃO</span>
+
+                    <strong id="pGeneration">
+                        GEN --
+                    </strong>
+
+                </div>
+
+                <div class="info-row">
+
+                    <span>COR DA ESPÉCIE</span>
+
+                    <strong id="pColor">--</strong>
+
+                </div>
+
+                <div class="stats">
+
+                    <div class="stats-title">
+                        BASE STATS
+                    </div>
+
+                    <div id="statsList"></div>
+
+                </div>
+
+            </section>
+
+            <aside class="right-panel">
+
+                <div class="panel-title">
+
+                    <span>OFFICIAL ARTWORK</span>
+
+                    <span id="led" class="led"></span>
+
+                </div>
+
+                <div class="art-frame">
+
+                    <img
+                        id="pArtwork"
+                        src=""
+                        alt="Arte oficial do Pokémon"
+                    >
+
+                </div>
+
+                <div class="right-footer">
+
+                    <span>POKÉDEX RECORD</span>
+
+                    <strong id="pRecord">#000</strong>
+
+                </div>
+
+            </aside>
+
+        </div>
+
+        <footer class="card-footer">
+
+            <span>
+                SPECIMEN DATABASE • POKÉAPI
+            </span>
+
+            <div class="navigation">
+
+                <button id="prevBtn" type="button">
+                    ← ANTERIOR
+                </button>
+
+                <button id="nextBtn" type="button">
+                    PRÓXIMO →
+                </button>
+
+            </div>
+
+        </footer>
+
+    </section>
+
+    <section class="quick-section">
+
+        <div class="section-heading">
+
+            <span>CONSULTA RÁPIDA</span>
+
+            <small>
+                Digite o nome ou número para consultar outro Pokémon
+            </small>
+
+        </div>
+
+        <div id="typeLegend" class="type-legend"></div>
+
+    </section>
+
+</main>
+
+<script src="script.js"></script>
+
+</body>
+</html>
