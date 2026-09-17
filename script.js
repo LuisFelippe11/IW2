@@ -1,43 +1,57 @@
-const API = "https://pokeapi.co/api/v2/pokemon/";
-const SPECIES_API = "https://pokeapi.co/api/v2/pokemon-species/";
-
-const searchForm = document.getElementById("searchForm");
-const searchInput = document.getElementById("searchInput");
-const randomBtn = document.getElementById("randomBtn");
-const themeBtn = document.getElementById("themeBtn");
-
-const status = document.getElementById("status");
-
-const card = document.getElementById("card");
-
-const pDex = document.getElementById("pDex");
-const pGenus = document.getElementById("pGenus");
-const pImg = document.getElementById("pImg");
-const pName = document.getElementById("pName");
-const pIdSmall = document.getElementById("pIdSmall");
-const pFlavor = document.getElementById("pFlavor");
-const pHeight = document.getElementById("pHeight");
-const pWeight = document.getElementById("pWeight");
-
-const pNameCenter = document.getElementById("pNameCenter");
-const pIdCenter = document.getElementById("pIdCenter");
-const pTypes = document.getElementById("pTypes");
-const pSize = document.getElementById("pSize");
-const pOrigin = document.getElementById("pOrigin");
-const pGeneration = document.getElementById("pGeneration");
-const pColor = document.getElementById("pColor");
-
-const statsList = document.getElementById("statsList");
-
-const pArtwork = document.getElementById("pArtwork");
-const pRecord = document.getElementById("pRecord");
-
-const typeLegend = document.getElementById("typeLegend");
-
-const prevBtn = document.getElementById("prevBtn");
-const nextBtn = document.getElementById("nextBtn");
+const API_POKE = "https://pokeapi.co/api/v2";
+const API_TCG = "https://api.pokemontcg.io/v2/cards";
 
 let currentPokemon = 1;
+let currentPokemonName = "";
+
+const elements = {
+    status: document.getElementById("status"),
+    card: document.getElementById("card"),
+
+    searchForm: document.getElementById("searchForm"),
+    searchInput: document.getElementById("searchInput"),
+
+    randomBtn: document.getElementById("randomBtn"),
+    themeBtn: document.getElementById("themeBtn"),
+
+    prevBtn: document.getElementById("prevBtn"),
+    nextBtn: document.getElementById("nextBtn"),
+
+    pDex: document.getElementById("pDex"),
+    pGenus: document.getElementById("pGenus"),
+    pImg: document.getElementById("pImg"),
+
+    pName: document.getElementById("pName"),
+    pIdSmall: document.getElementById("pIdSmall"),
+    pFlavor: document.getElementById("pFlavor"),
+
+    pHeight: document.getElementById("pHeight"),
+    pWeight: document.getElementById("pWeight"),
+
+    pNameCenter: document.getElementById("pNameCenter"),
+    pIdCenter: document.getElementById("pIdCenter"),
+
+    pTypes: document.getElementById("pTypes"),
+
+    pSize: document.getElementById("pSize"),
+    pOrigin: document.getElementById("pOrigin"),
+    pGeneration: document.getElementById("pGeneration"),
+    pColor: document.getElementById("pColor"),
+
+    statsList: document.getElementById("statsList"),
+
+    pArtwork: document.getElementById("pArtwork"),
+    pRecord: document.getElementById("pRecord"),
+
+    recordId: document.getElementById("recordId"),
+
+    tcgCard: document.getElementById("tcgCard"),
+    tcgCardName: document.getElementById("tcgCardName"),
+    tcgCardId: document.getElementById("tcgCardId"),
+
+    led: document.getElementById("led"),
+    typeLegend: document.getElementById("typeLegend")
+};
 
 const typeColors = {
     normal: "#A8A77A",
@@ -60,341 +74,591 @@ const typeColors = {
     fairy: "#D685AD"
 };
 
-const typeNames = {
-    normal: "Normal",
-    fire: "Fogo",
-    water: "Água",
-    electric: "Elétrico",
-    grass: "Grama",
-    ice: "Gelo",
-    fighting: "Lutador",
-    poison: "Veneno",
-    ground: "Terrestre",
-    flying: "Voador",
-    psychic: "Psíquico",
-    bug: "Inseto",
-    rock: "Pedra",
-    ghost: "Fantasma",
-    dragon: "Dragão",
-    dark: "Sombrio",
-    steel: "Aço",
-    fairy: "Fada"
+const generationNames = {
+    1: "GEN I",
+    2: "GEN II",
+    3: "GEN III",
+    4: "GEN IV",
+    5: "GEN V",
+    6: "GEN VI",
+    7: "GEN VII",
+    8: "GEN VIII",
+    9: "GEN IX"
+};
+
+const regionNames = {
+    1: "KANTO",
+    2: "JOHTO",
+    3: "HOENN",
+    4: "SINNOH",
+    5: "UNOVA",
+    6: "KALOS",
+    7: "ALOLA",
+    8: "GALAR",
+    9: "PALDEA"
 };
 
 const colorNames = {
-    red: "Vermelho",
-    blue: "Azul",
-    yellow: "Amarelo",
-    green: "Verde",
-    black: "Preto",
-    brown: "Marrom",
-    purple: "Roxo",
-    gray: "Cinza",
-    white: "Branco",
-    pink: "Rosa"
-};
-
-const generationNames = {
-    "generation-i": "GEN I",
-    "generation-ii": "GEN II",
-    "generation-iii": "GEN III",
-    "generation-iv": "GEN IV",
-    "generation-v": "GEN V",
-    "generation-vi": "GEN VI",
-    "generation-vii": "GEN VII",
-    "generation-viii": "GEN VIII",
-    "generation-ix": "GEN IX"
+    black: "PRETO",
+    blue: "AZUL",
+    brown: "MARROM",
+    gray: "CINZA",
+    green: "VERDE",
+    pink: "ROSA",
+    purple: "ROXO",
+    red: "VERMELHO",
+    white: "BRANCO",
+    yellow: "AMARELO"
 };
 
 function formatName(name) {
     return name
         .split("-")
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
         .join(" ");
 }
 
-function setColor(color) {
-    const mainColor = typeColors[color] || "#e0483a";
+function formatNumber(number) {
+    return `#${String(number).padStart(3, "0")}`;
+}
 
-    const hex = mainColor.replace("#", "");
+function setStatus(message) {
+    if (elements.status) {
+        elements.status.textContent = message;
+    }
+}
+
+function setTheme(type) {
+    const color = typeColors[type] || "#ef5350";
+
+    const hex = color.replace("#", "");
 
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
 
-    const darker = `rgb(${Math.max(0, r - 70)}, ${Math.max(0, g - 70)}, ${Math.max(0, b - 70)})`;
+    const darker = Math.max(r - 80, 0)
+        .toString(16)
+        .padStart(2, "0")
+        +
+        Math.max(g - 80, 0)
+            .toString(16)
+            .padStart(2, "0")
+        +
+        Math.max(b - 80, 0)
+            .toString(16)
+            .padStart(2, "0");
 
-    document.documentElement.style.setProperty("--accent", mainColor);
-    document.documentElement.style.setProperty("--deep", darker);
-    document.documentElement.style.setProperty("--accent-rgb", `${r}, ${g}, ${b}`);
+    document.documentElement.style.setProperty("--accent", color);
+    document.documentElement.style.setProperty("--deep", `#${darker}`);
+    document.documentElement.style.setProperty(
+        "--accent-rgb",
+        `${r}, ${g}, ${b}`
+    );
 }
 
-function createType(type) {
-    const element = document.createElement("span");
+function clearTCGCard() {
+    if (elements.tcgCard) {
+        elements.tcgCard.src = "";
+        elements.tcgCard.alt = "Carta Pokémon TCG não encontrada";
+    }
 
-    element.className = "type";
+    if (elements.tcgCardName) {
+        elements.tcgCardName.textContent = "SEM CARTA";
+    }
 
-    element.textContent = typeNames[type] || formatName(type);
-
-    element.style.background = typeColors[type] || "#777";
-
-    return element;
+    if (elements.tcgCardId) {
+        elements.tcgCardId.textContent = "---";
+    }
 }
 
-function createLegend() {
-    typeLegend.innerHTML = "";
+async function loadTCGCard(pokemonName) {
+    clearTCGCard();
 
-    Object.keys(typeColors).forEach(type => {
-        const element = document.createElement("span");
-
-        element.className = "legend";
-
-        element.textContent = typeNames[type];
-
-        element.style.background = typeColors[type];
-
-        typeLegend.appendChild(element);
-    });
-}
-
-function createStat(name, value) {
-    const stat = document.createElement("div");
-
-    stat.className = "stat";
-
-    const translatedNames = {
-        hp: "HP",
-        attack: "Ataque",
-        defense: "Defesa",
-        "special-attack": "Ataque Esp.",
-        "special-defense": "Defesa Esp.",
-        speed: "Velocidade"
-    };
-
-    const percentage = Math.min((value / 255) * 100, 100);
-
-    stat.innerHTML = `
-        <span>${translatedNames[name] || formatName(name)}</span>
-        <div class="bar">
-            <i style="width: ${percentage}%"></i>
-        </div>
-        <strong>${value}</strong>
-    `;
-
-    return stat;
-}
-
-async function loadPokemon(pokemon) {
     try {
-        status.textContent = "Carregando Pokémon...";
+        const query = encodeURIComponent(`name:${pokemonName}`);
 
-        const response = await fetch(`${API}${pokemon}`);
+        const response = await fetch(
+            `${API_TCG}?q=${query}&pageSize=20&orderBy=-set.releaseDate`
+        );
 
         if (!response.ok) {
-            throw new Error("Pokémon não encontrado");
+            throw new Error("Erro na API TCG");
         }
 
         const data = await response.json();
 
-        let speciesData = null;
+        if (!data.data || data.data.length === 0) {
+            const fallbackQuery = encodeURIComponent(
+                `name:${pokemonName}*`
+            );
 
-        try {
-            const speciesResponse = await fetch(`${SPECIES_API}${data.id}`);
-            speciesData = await speciesResponse.json();
-        } catch (error) {
-            console.log("Não foi possível carregar os dados da espécie.");
+            const fallbackResponse = await fetch(
+                `${API_TCG}?q=${fallbackQuery}&pageSize=20&orderBy=-set.releaseDate`
+            );
+
+            if (!fallbackResponse.ok) {
+                throw new Error("Carta não encontrada");
+            }
+
+            const fallbackData = await fallbackResponse.json();
+
+            if (!fallbackData.data || fallbackData.data.length === 0) {
+                return;
+            }
+
+            showTCGCard(fallbackData.data[0]);
+            return;
         }
 
-        currentPokemon = data.id;
-
-        updatePokemon(data, speciesData);
-
-        status.textContent = `Registro carregado: #${String(data.id).padStart(3, "0")} • ${formatName(data.name)}`;
+        showTCGCard(data.data[0]);
 
     } catch (error) {
+        console.error("Erro TCG:", error);
+        clearTCGCard();
+    }
+}
 
-        status.textContent = "Pokémon não encontrado.";
+function showTCGCard(card) {
+    if (!card) {
+        return;
+    }
 
-        pName.textContent = "NÃO ENCONTRADO";
-        pNameCenter.textContent = "NÃO ENCONTRADO";
-        pFlavor.textContent = "Não foi possível encontrar esse Pokémon.";
+    if (elements.tcgCard && card.images) {
+        elements.tcgCard.src = card.images.large || card.images.small || "";
+        elements.tcgCard.alt = `Carta ${card.name}`;
+    }
 
-        pImg.removeAttribute("src");
-        pArtwork.removeAttribute("src");
+    if (elements.tcgCardName) {
+        elements.tcgCardName.textContent =
+            card.name || "TCG CARD";
+    }
 
+    if (elements.tcgCardId) {
+        elements.tcgCardId.textContent =
+            card.id || "---";
+    }
+}
+
+async function loadPokemon(identifier) {
+    setStatus("Carregando Pokémon...");
+
+    try {
+        const pokemonResponse = await fetch(
+            `${API_POKE}/pokemon/${encodeURIComponent(identifier)}`
+        );
+
+        if (!pokemonResponse.ok) {
+            throw new Error("Pokémon não encontrado");
+        }
+
+        const pokemon = await pokemonResponse.json();
+
+        const speciesResponse = await fetch(
+            pokemon.species.url
+        );
+
+        const species = await speciesResponse.json();
+
+        currentPokemon = pokemon.id;
+        currentPokemonName = pokemon.name;
+
+        updatePokemon(pokemon, species);
+
+        await loadTCGCard(pokemon.name);
+
+        setStatus(
+            `${formatName(pokemon.name)} carregado com sucesso`
+        );
+
+    } catch (error) {
         console.error(error);
+
+        setStatus(
+            "Pokémon não encontrado. Digite um nome ou número válido."
+        );
     }
 }
 
-function updatePokemon(data, species) {
+function updatePokemon(pokemon, species) {
+    const name = formatName(pokemon.name);
+    const number = formatNumber(pokemon.id);
 
-    const id = String(data.id).padStart(3, "0");
+    const types = pokemon.types.map(
+        item => item.type.name
+    );
 
-    const name = formatName(data.name);
+    const primaryType = types[0];
 
-    const primaryType = data.types[0].type.name;
+    setTheme(primaryType);
 
-    setColor(primaryType);
+    if (elements.pDex) {
+        elements.pDex.textContent = number;
+    }
 
-    pDex.textContent = `#${id}`;
-
-    pName.textContent = name.toUpperCase();
-
-    pNameCenter.textContent = name.toUpperCase();
-
-    pIdSmall.textContent = `ID ${id}`;
-
-    pIdCenter.textContent = `#${id}`;
-
-    pRecord.textContent = `#${id}`;
-
-    pImg.src = data.sprites.front_default || data.sprites.other["official-artwork"].front_default;
-
-    pImg.alt = `Imagem de ${name}`;
-
-    const artwork =
-        data.sprites.other?.["official-artwork"]?.front_default ||
-        data.sprites.other?.home?.front_default ||
-        data.sprites.front_default;
-
-    pArtwork.src = artwork;
-
-    pArtwork.alt = `Arte oficial de ${name}`;
-
-    pHeight.textContent = `${(data.height / 10).toFixed(1)} m`;
-
-    pWeight.textContent = `${(data.weight / 10).toFixed(1)} kg`;
-
-    pSize.textContent =
-        `${(data.height / 10).toFixed(1)} m / ${(data.weight / 10).toFixed(1)} kg`;
-
-    pTypes.innerHTML = "";
-
-    data.types.forEach(item => {
-        pTypes.appendChild(
-            createType(item.type.name)
-        );
-    });
-
-    statsList.innerHTML = "";
-
-    data.stats.forEach(stat => {
-        statsList.appendChild(
-            createStat(
-                stat.stat.name,
-                stat.base_stat
-            )
-        );
-    });
-
-    if (species) {
-
-        pColor.textContent =
-            colorNames[species.color.name] ||
-            formatName(species.color.name);
-
-        pGeneration.textContent =
-            generationNames[species.generation.name] ||
-            formatName(species.generation.name);
-
-        const genus = species.genera.find(
+    if (elements.pGenus) {
+        const genusEntry = species.genera.find(
             item => item.language.name === "en"
         );
 
-        if (genus) {
-            pGenus.textContent = genus.genus.toUpperCase();
-        }
+        elements.pGenus.textContent =
+            genusEntry
+                ? genusEntry.genus.toUpperCase()
+                : "SPECIES";
+    }
 
-        const flavor = species.flavor_text_entries.find(
-            item => item.language.name === "en"
-        );
+    if (elements.pImg) {
+        elements.pImg.src =
+            pokemon.sprites.front_default ||
+            pokemon.sprites.other?.["official-artwork"]?.front_default ||
+            "";
 
-        if (flavor) {
+        elements.pImg.alt = name;
+    }
 
-            pFlavor.textContent = flavor.flavor_text
-                .replace(/\f/g, " ")
-                .replace(/\n/g, " ");
-        }
+    if (elements.pArtwork) {
+        elements.pArtwork.src =
+            pokemon.sprites.other?.["official-artwork"]?.front_default ||
+            pokemon.sprites.front_default ||
+            "";
 
-        const generation =
-            generationNames[species.generation.name];
+        elements.pArtwork.alt = `Arte oficial de ${name}`;
+    }
 
-        if (generation) {
-            pGeneration.textContent = generation;
-        }
+    if (elements.pName) {
+        elements.pName.textContent = name.toUpperCase();
+    }
 
-        const regionNames = {
-            "generation-i": "KANTO",
-            "generation-ii": "JOHTO",
-            "generation-iii": "HOENN",
-            "generation-iv": "SINNOH",
-            "generation-v": "UNOVA",
-            "generation-vi": "KALOS",
-            "generation-vii": "ALOLA",
-            "generation-viii": "GALAR",
-            "generation-ix": "PALDEA"
-        };
+    if (elements.pIdSmall) {
+        elements.pIdSmall.textContent =
+            `ID ${String(pokemon.id).padStart(3, "0")}`;
+    }
 
-        const region =
-            regionNames[species.generation.name] ||
-            "DESCONHECIDA";
+    if (elements.pNameCenter) {
+        elements.pNameCenter.textContent =
+            name.toUpperCase();
+    }
 
-        pOrigin.textContent = region;
+    if (elements.pIdCenter) {
+        elements.pIdCenter.textContent = number;
+    }
+
+    if (elements.recordId) {
+        elements.recordId.textContent = number;
+    }
+
+    if (elements.pRecord) {
+        elements.pRecord.textContent = number;
+    }
+
+    if (elements.pHeight) {
+        elements.pHeight.textContent =
+            `${(pokemon.height / 10).toFixed(1)} m`;
+    }
+
+    if (elements.pWeight) {
+        elements.pWeight.textContent =
+            `${(pokemon.weight / 10).toFixed(1)} kg`;
+    }
+
+    if (elements.pSize) {
+        elements.pSize.textContent =
+            `${(pokemon.height / 10).toFixed(1)} m / ${(pokemon.weight / 10).toFixed(1)} kg`;
+    }
+
+    updateTypes(types);
+
+    updateSpecies(species);
+
+    updateFlavor(species);
+
+    updateStats(pokemon.stats);
+}
+
+function updateTypes(types) {
+    if (!elements.pTypes) {
+        return;
+    }
+
+    elements.pTypes.innerHTML = "";
+
+    types.forEach(type => {
+        const span = document.createElement("span");
+
+        span.className = "type";
+
+        span.textContent =
+            type.toUpperCase();
+
+        span.style.background =
+            typeColors[type] || "#777";
+
+        elements.pTypes.appendChild(span);
+    });
+}
+
+function updateSpecies(species) {
+    const generation =
+        species.generation?.name?.replace("generation-", "");
+
+    const generationNumber =
+        romanToNumber(generation);
+
+    const region =
+        regionNames[generationNumber] ||
+        "REGIÃO DESCONHECIDA";
+
+    const color =
+        colorNames[species.color?.name] ||
+        species.color?.name?.toUpperCase() ||
+        "---";
+
+    if (elements.pGeneration) {
+        elements.pGeneration.textContent =
+            generationNames[generationNumber] ||
+            "GEN --";
+    }
+
+    if (elements.pOrigin) {
+        elements.pOrigin.textContent =
+            region;
+    }
+
+    if (elements.pColor) {
+        elements.pColor.textContent =
+            color;
     }
 }
 
-searchForm.addEventListener("submit", event => {
+function romanToNumber(roman) {
+    const values = {
+        i: 1,
+        ii: 2,
+        iii: 3,
+        iv: 4,
+        v: 5,
+        vi: 6,
+        vii: 7,
+        viii: 8,
+        ix: 9
+    };
 
+    return values[roman] || 0;
+}
+
+function updateFlavor(species) {
+    if (!elements.pFlavor) {
+        return;
+    }
+
+    const entry = species.flavor_text_entries.find(
+        item => item.language.name === "en"
+    );
+
+    if (!entry) {
+        elements.pFlavor.textContent =
+            "Descrição não disponível.";
+        return;
+    }
+
+    const text = entry.flavor_text
+        .replace(/\f/g, " ")
+        .replace(/\n/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    elements.pFlavor.textContent = text;
+}
+
+function updateStats(stats) {
+    if (!elements.statsList) {
+        return;
+    }
+
+    elements.statsList.innerHTML = "";
+
+    const names = {
+        hp: "HP",
+        attack: "ATK",
+        defense: "DEF",
+        "special-attack": "SP. ATK",
+        "special-defense": "SP. DEF",
+        speed: "SPEED"
+    };
+
+    stats.forEach(stat => {
+        const row = document.createElement("div");
+
+        row.className = "stat-row";
+
+        const label = document.createElement("span");
+
+        label.textContent =
+            names[stat.stat.name] ||
+            stat.stat.name.toUpperCase();
+
+        const value = document.createElement("strong");
+
+        value.textContent =
+            stat.base_stat;
+
+        const bar = document.createElement("div");
+
+        bar.className = "stat-bar";
+
+        const fill = document.createElement("div");
+
+        fill.className = "stat-fill";
+
+        const percentage =
+            Math.min(stat.base_stat / 2.55, 100);
+
+        fill.style.width =
+            `${percentage}%`;
+
+        bar.appendChild(fill);
+
+        row.appendChild(label);
+        row.appendChild(value);
+        row.appendChild(bar);
+
+        elements.statsList.appendChild(row);
+    });
+}
+
+async function searchPokemon(event) {
     event.preventDefault();
 
-    const value = searchInput.value.trim().toLowerCase();
+    const value =
+        elements.searchInput.value.trim().toLowerCase();
 
     if (!value) {
         return;
     }
 
-    loadPokemon(value);
-});
+    await loadPokemon(value);
+}
 
-randomBtn.addEventListener("click", () => {
+function nextPokemon() {
+    if (currentPokemon >= 1025) {
+        currentPokemon = 1;
+    } else {
+        currentPokemon++;
+    }
 
+    loadPokemon(currentPokemon);
+}
+
+function previousPokemon() {
+    if (currentPokemon <= 1) {
+        currentPokemon = 1025;
+    } else {
+        currentPokemon--;
+    }
+
+    loadPokemon(currentPokemon);
+}
+
+function randomPokemon() {
     const random =
         Math.floor(Math.random() * 1025) + 1;
 
     loadPokemon(random);
-});
+}
 
-prevBtn.addEventListener("click", () => {
+function toggleTheme() {
+    document.body.classList.toggle("light-mode");
+}
 
-    if (currentPokemon > 1) {
-        loadPokemon(currentPokemon - 1);
+function createTypeLegend() {
+    if (!elements.typeLegend) {
+        return;
     }
-});
 
-nextBtn.addEventListener("click", () => {
+    elements.typeLegend.innerHTML = "";
 
-    if (currentPokemon < 1025) {
-        loadPokemon(currentPokemon + 1);
-    }
-});
+    Object.entries(typeColors).forEach(
+        ([type, color]) => {
 
-themeBtn.addEventListener("click", () => {
+            const item =
+                document.createElement("span");
 
-    document.body.classList.toggle("light");
-});
+            item.textContent =
+                type.toUpperCase();
 
-pImg.addEventListener("error", () => {
+            item.style.borderColor =
+                color;
 
-    pImg.src =
-        "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png";
-});
+            item.style.color =
+                color;
 
-pArtwork.addEventListener("error", () => {
+            elements.typeLegend.appendChild(item);
+        }
+    );
+}
 
-    pArtwork.src =
-        "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png";
-});
+if (elements.searchForm) {
+    elements.searchForm.addEventListener(
+        "submit",
+        searchPokemon
+    );
+}
 
-createLegend();
+if (elements.nextBtn) {
+    elements.nextBtn.addEventListener(
+        "click",
+        nextPokemon
+    );
+}
 
-loadPokemon(6);
+if (elements.prevBtn) {
+    elements.prevBtn.addEventListener(
+        "click",
+        previousPokemon
+    );
+}
+
+if (elements.randomBtn) {
+    elements.randomBtn.addEventListener(
+        "click",
+        randomPokemon
+    );
+}
+
+if (elements.themeBtn) {
+    elements.themeBtn.addEventListener(
+        "click",
+        toggleTheme
+    );
+}
+
+if (elements.pImg) {
+    elements.pImg.addEventListener(
+        "error",
+        () => {
+            elements.pImg.src = "";
+        }
+    );
+}
+
+if (elements.pArtwork) {
+    elements.pArtwork.addEventListener(
+        "error",
+        () => {
+            elements.pArtwork.src = "";
+        }
+    );
+}
+
+if (elements.tcgCard) {
+    elements.tcgCard.addEventListener(
+        "error",
+        () => {
+            elements.tcgCard.src = "";
+        }
+    );
+}
+
+createTypeLegend();
+
+loadPokemon(1);
