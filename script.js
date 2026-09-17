@@ -5,11 +5,6 @@ let currentPokemon = 1;
 let currentPokemonName = "";
 let tcgdex = null;
 
-// A build "tcgdex.browser.global.min.js" carregada via <script> só expõe
-// `window.TCGdex`, sem a classe `Query` (que só existe nos builds ESM/CJS
-// do pacote). Sem isso, `Query.create()` disparava "Query is not defined"
-// e a carta do TCG nunca era carregada. Esta classe replica exatamente a
-// implementação oficial do SDK (src/Query.ts) para funcionar no navegador.
 class Query {
     constructor() {
         this.params = [];
