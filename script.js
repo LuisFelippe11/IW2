@@ -1,8 +1,9 @@
 const API_POKE = "https://pokeapi.co/api/v2";
-const API_TCG = "https://api.pokemontcg.io/v2/cards";
+const TCGDEX_URL = "https://cdn.jsdelivr.net/npm/@tcgdex/sdk@2/dist/tcgdex.browser.global.min.js";
 
 let currentPokemon = 1;
 let currentPokemonName = "";
+let tcgdex = null;
 
 const elements = {
     status: document.getElementById("status"),
@@ -137,17 +138,13 @@ function setTheme(type) {
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
 
-    const darker = Math.max(r - 80, 0)
-        .toString(16)
-        .padStart(2, "0")
-        +
-        Math.max(g - 80, 0)
-            .toString(16)
-            .padStart(2, "0")
-        +
+    const darker = [
+        Math.max(r - 80, 0),
+        Math.max(g - 80, 0),
         Math.max(b - 80, 0)
-            .toString(16)
-            .padStart(2, "0");
+    ]
+        .map(value => value.toString(16).padStart(2, "0"))
+        .join("");
 
     document.documentElement.style.setProperty("--accent", color);
     document.documentElement.style.setProperty("--deep", `#${darker}`);
@@ -157,9 +154,40 @@ function setTheme(type) {
     );
 }
 
+function loadTCGdexSDK() {
+    return new Promise((resolve, reject) => {
+        if (window.TCGdex) {
+            resolve();
+            return;
+        }
+
+        const script = document.createElement("script");
+
+        script.src = TCGDEX_URL;
+        script.onload = resolve;
+        script.onerror = reject;
+
+        document.head.appendChild(script);
+    });
+}
+
+async function initializeTCGdex() {
+    try {
+        await loadTCGdexSDK();
+
+        tcgdex = new TCGdex("en");
+
+        return true;
+    } catch (error) {
+        console.error("Erro ao carregar TCGdex:", error);
+
+        return false;
+    }
+}
+
 function clearTCGCard() {
     if (elements.tcgCard) {
-        elements.tcgCard.src = "";
+        elements.tcgCard.removeAttribute("src");
         elements.tcgCard.alt = "Carta Pokémon TCG não encontrada";
     }
 
@@ -175,46 +203,34 @@ function clearTCGCard() {
 async function loadTCGCard(pokemonName) {
     clearTCGCard();
 
+    if (!tcgdex) {
+        return;
+    }
+
     try {
-        const query = encodeURIComponent(`name:${pokemonName}`);
+        const query = Query.create()
+            .equal("name", formatName(pokemonName))
+            .sort("localId", "ASC");
 
-        const response = await fetch(
-            `${API_TCG}?q=${query}&pageSize=20&orderBy=-set.releaseDate`
-        );
+        const cards = await tcgdex.card.list(query);
 
-        if (!response.ok) {
-            throw new Error("Erro na API TCG");
-        }
-
-        const data = await response.json();
-
-        if (!data.data || data.data.length === 0) {
-            const fallbackQuery = encodeURIComponent(
-                `name:${pokemonName}*`
+        if (!cards || cards.length === 0) {
+            setStatus(
+                `${formatName(pokemonName)} encontrado, mas nenhuma carta TCG foi encontrada.`
             );
 
-            const fallbackResponse = await fetch(
-                `${API_TCG}?q=${fallbackQuery}&pageSize=20&orderBy=-set.releaseDate`
-            );
-
-            if (!fallbackResponse.ok) {
-                throw new Error("Carta não encontrada");
-            }
-
-            const fallbackData = await fallbackResponse.json();
-
-            if (!fallbackData.data || fallbackData.data.length === 0) {
-                return;
-            }
-
-            showTCGCard(fallbackData.data[0]);
             return;
         }
 
-        showTCGCard(data.data[0]);
+        const cardResume = cards[0];
+
+        const card = await cardResume.getCard();
+
+        showTCGCard(card);
 
     } catch (error) {
-        console.error("Erro TCG:", error);
+        console.error("Erro TCGdex:", error);
+
         clearTCGCard();
     }
 }
@@ -224,9 +240,13 @@ function showTCGCard(card) {
         return;
     }
 
-    if (elements.tcgCard && card.images) {
-        elements.tcgCard.src = card.images.large || card.images.small || "";
-        elements.tcgCard.alt = `Carta ${card.name}`;
+    if (elements.tcgCard) {
+        const imageURL =
+            card.getImageURL("high", "png");
+
+        elements.tcgCard.src = imageURL;
+        elements.tcgCard.alt =
+            `Carta TCG ${card.name}`;
     }
 
     if (elements.tcgCardName) {
@@ -236,7 +256,7 @@ function showTCGCard(card) {
 
     if (elements.tcgCardId) {
         elements.tcgCardId.textContent =
-            card.id || "---";
+            card.id || card.localId || "---";
     }
 }
 
@@ -252,13 +272,14 @@ async function loadPokemon(identifier) {
             throw new Error("Pokémon não encontrado");
         }
 
-        const pokemon = await pokemonResponse.json();
+        const pokemon =
+            await pokemonResponse.json();
 
-        const speciesResponse = await fetch(
-            pokemon.species.url
-        );
+        const speciesResponse =
+            await fetch(pokemon.species.url);
 
-        const species = await speciesResponse.json();
+        const species =
+            await speciesResponse.json();
 
         currentPokemon = pokemon.id;
         currentPokemonName = pokemon.name;
@@ -272,7 +293,7 @@ async function loadPokemon(identifier) {
         );
 
     } catch (error) {
-        console.error(error);
+        console.error("Erro PokéAPI:", error);
 
         setStatus(
             "Pokémon não encontrado. Digite um nome ou número válido."
@@ -281,25 +302,33 @@ async function loadPokemon(identifier) {
 }
 
 function updatePokemon(pokemon, species) {
-    const name = formatName(pokemon.name);
-    const number = formatNumber(pokemon.id);
+    const name =
+        formatName(pokemon.name);
 
-    const types = pokemon.types.map(
-        item => item.type.name
-    );
+    const number =
+        formatNumber(pokemon.id);
 
-    const primaryType = types[0];
+    const types =
+        pokemon.types.map(
+            item => item.type.name
+        );
+
+    const primaryType =
+        types[0];
 
     setTheme(primaryType);
 
     if (elements.pDex) {
-        elements.pDex.textContent = number;
+        elements.pDex.textContent =
+            number;
     }
 
     if (elements.pGenus) {
-        const genusEntry = species.genera.find(
-            item => item.language.name === "en"
-        );
+        const genusEntry =
+            species.genera.find(
+                item =>
+                    item.language.name === "en"
+            );
 
         elements.pGenus.textContent =
             genusEntry
@@ -313,7 +342,8 @@ function updatePokemon(pokemon, species) {
             pokemon.sprites.other?.["official-artwork"]?.front_default ||
             "";
 
-        elements.pImg.alt = name;
+        elements.pImg.alt =
+            name;
     }
 
     if (elements.pArtwork) {
@@ -322,11 +352,13 @@ function updatePokemon(pokemon, species) {
             pokemon.sprites.front_default ||
             "";
 
-        elements.pArtwork.alt = `Arte oficial de ${name}`;
+        elements.pArtwork.alt =
+            `Arte oficial de ${name}`;
     }
 
     if (elements.pName) {
-        elements.pName.textContent = name.toUpperCase();
+        elements.pName.textContent =
+            name.toUpperCase();
     }
 
     if (elements.pIdSmall) {
@@ -340,15 +372,18 @@ function updatePokemon(pokemon, species) {
     }
 
     if (elements.pIdCenter) {
-        elements.pIdCenter.textContent = number;
+        elements.pIdCenter.textContent =
+            number;
     }
 
     if (elements.recordId) {
-        elements.recordId.textContent = number;
+        elements.recordId.textContent =
+            number;
     }
 
     if (elements.pRecord) {
-        elements.pRecord.textContent = number;
+        elements.pRecord.textContent =
+            number;
     }
 
     if (elements.pHeight) {
@@ -383,9 +418,11 @@ function updateTypes(types) {
     elements.pTypes.innerHTML = "";
 
     types.forEach(type => {
-        const span = document.createElement("span");
+        const span =
+            document.createElement("span");
 
-        span.className = "type";
+        span.className =
+            "type";
 
         span.textContent =
             type.toUpperCase();
@@ -399,7 +436,10 @@ function updateTypes(types) {
 
 function updateSpecies(species) {
     const generation =
-        species.generation?.name?.replace("generation-", "");
+        species.generation?.name?.replace(
+            "generation-",
+            ""
+        );
 
     const generationNumber =
         romanToNumber(generation);
@@ -451,23 +491,28 @@ function updateFlavor(species) {
         return;
     }
 
-    const entry = species.flavor_text_entries.find(
-        item => item.language.name === "en"
-    );
+    const entry =
+        species.flavor_text_entries.find(
+            item =>
+                item.language.name === "en"
+        );
 
     if (!entry) {
         elements.pFlavor.textContent =
             "Descrição não disponível.";
+
         return;
     }
 
-    const text = entry.flavor_text
-        .replace(/\f/g, " ")
-        .replace(/\n/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
+    const text =
+        entry.flavor_text
+            .replace(/\f/g, " ")
+            .replace(/\n/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
 
-    elements.pFlavor.textContent = text;
+    elements.pFlavor.textContent =
+        text;
 }
 
 function updateStats(stats) {
@@ -487,31 +532,42 @@ function updateStats(stats) {
     };
 
     stats.forEach(stat => {
-        const row = document.createElement("div");
+        const row =
+            document.createElement("div");
 
-        row.className = "stat-row";
+        row.className =
+            "stat-row";
 
-        const label = document.createElement("span");
+        const label =
+            document.createElement("span");
 
         label.textContent =
             names[stat.stat.name] ||
             stat.stat.name.toUpperCase();
 
-        const value = document.createElement("strong");
+        const value =
+            document.createElement("strong");
 
         value.textContent =
             stat.base_stat;
 
-        const bar = document.createElement("div");
+        const bar =
+            document.createElement("div");
 
-        bar.className = "stat-bar";
+        bar.className =
+            "stat-bar";
 
-        const fill = document.createElement("div");
+        const fill =
+            document.createElement("div");
 
-        fill.className = "stat-fill";
+        fill.className =
+            "stat-fill";
 
         const percentage =
-            Math.min(stat.base_stat / 2.55, 100);
+            Math.min(
+                stat.base_stat / 2.55,
+                100
+            );
 
         fill.style.width =
             `${percentage}%`;
@@ -526,17 +582,19 @@ function updateStats(stats) {
     });
 }
 
-async function searchPokemon(event) {
+function searchPokemon(event) {
     event.preventDefault();
 
     const value =
-        elements.searchInput.value.trim().toLowerCase();
+        elements.searchInput.value
+            .trim()
+            .toLowerCase();
 
     if (!value) {
         return;
     }
 
-    await loadPokemon(value);
+    loadPokemon(value);
 }
 
 function nextPokemon() {
@@ -561,13 +619,17 @@ function previousPokemon() {
 
 function randomPokemon() {
     const random =
-        Math.floor(Math.random() * 1025) + 1;
+        Math.floor(
+            Math.random() * 1025
+        ) + 1;
 
     loadPokemon(random);
 }
 
 function toggleTheme() {
-    document.body.classList.toggle("light-mode");
+    document.body.classList.toggle(
+        "light-mode"
+    );
 }
 
 function createTypeLegend() {
@@ -577,8 +639,8 @@ function createTypeLegend() {
 
     elements.typeLegend.innerHTML = "";
 
-    Object.entries(typeColors).forEach(
-        ([type, color]) => {
+    Object.entries(typeColors)
+        .forEach(([type, color]) => {
 
             const item =
                 document.createElement("span");
@@ -593,8 +655,7 @@ function createTypeLegend() {
                 color;
 
             elements.typeLegend.appendChild(item);
-        }
-    );
+        });
 }
 
 if (elements.searchForm) {
@@ -632,33 +693,17 @@ if (elements.themeBtn) {
     );
 }
 
-if (elements.pImg) {
-    elements.pImg.addEventListener(
-        "error",
-        () => {
-            elements.pImg.src = "";
-        }
-    );
-}
-
-if (elements.pArtwork) {
-    elements.pArtwork.addEventListener(
-        "error",
-        () => {
-            elements.pArtwork.src = "";
-        }
-    );
-}
-
-if (elements.tcgCard) {
-    elements.tcgCard.addEventListener(
-        "error",
-        () => {
-            elements.tcgCard.src = "";
-        }
-    );
-}
-
 createTypeLegend();
 
-loadPokemon(1);
+(async () => {
+    const tcgReady =
+        await initializeTCGdex();
+
+    if (!tcgReady) {
+        setStatus(
+            "PokéAPI carregada. TCGdex não pôde ser carregada."
+        );
+    }
+
+    await loadPokemon(1);
+})();
