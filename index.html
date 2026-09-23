@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>PokeXTCG</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<main class="app">
+
+<header class="topbar">
+
+<div class="brand">
+<span class="status-dot"></span>
+POKÉDEX
+</div>
+
+<div class="top-logo">
+<img src="assets/LogoCina.png">
+</div>
+
+<div class="top-actions">
+<button id="randomBtn" class="mini-btn">ALEATÓRIO</button>
+<button id="themeBtn" class="mini-btn">◐</button>
+</div>
+
+<form id="searchForm" class="search">
+<input id="searchInput" placeholder="Nome ou número do Pokémon">
+<button>BUSCAR</button>
+</form>
+
+</header>
+
+
+<p id="status" class="status">
+Carregando Pokémon...
+</p>
+
+
+<section class="specimen-card">
+
+
+<div class="card-header">
+
+<div>
+<span class="eyebrow">Registro Pokémon</span>
+<h1>PokeXTCG</h1>
+</div>
+
+<div class="card-logo">
+<img src="assets/LogoCina.png">
+</div>
+
+<div class="badges">
+<span id="recordId">#000</span>
+</div>
+
+</div>
+
+
+
+<div class="card-body">
+
+
+<aside class="panel">
+
+<div class="panel-title">
+<span id="pDex">#000</span>
+<span id="pGenus">SPECIES</span>
+</div>
+
+
+<div class="portrait-frame">
+<div class="scan-line"></div>
+<img id="pImg">
+</div>
+
+
+<div class="name-strip">
+<span id="pName">---</span>
+<span id="pIdSmall">ID 000</span>
+</div>
+
+
+<p id="pFlavor" class="flavor">
+Buscando informações...
+</p>
+
+
+<div class="measure">
+
+<span>
+ALTURA
+<strong id="pHeight">--</strong>
+</span>
+
+<span>
+PESO
+<strong id="pWeight">--</strong>
+</span>
+
+</div>
+
+</aside>
+
+
+
+
+<section class="panel info-panel">
+
+
+<div class="info-row highlight">
+<span>NOME</span>
+<strong id="pNameCenter">---</strong>
+<small id="pIdCenter">#000</small>
+</div>
+
+
+<div class="info-row">
+<span>TIPO</span>
+<div id="pTypes" class="type-list"></div>
+</div>
+
+
+<div class="info-row">
+<span>TAMANHO</span>
+<strong id="pSize">--</strong>
+</div>
+
+
+<div class="info-row">
+<span>ORIGEM</span>
+<strong id="pOrigin">---</strong>
+</div>
+
+
+<div class="info-row">
+<span>GERAÇÃO</span>
+<strong id="pGeneration">---</strong>
+</div>
+
+
+<div class="info-row">
+<span>COR</span>
+<strong id="pColor">---</strong>
+</div>
+
+
+<div class="stats">
+<div class="stats-title">BASE STATS</div>
+<div id="statsList"></div>
+</div>
+
+
+</section>
+
+
+
+
+
+<aside class="panel right-panel">
+
+
+<div class="panel-title">
+Card Pokémon TCG
+<span class="led"></span>
+</div>
+
+
+<div class="art-frame">
+
+<img id="tcgCard">
+
+<span id="tcgMessage">
+CARREGANDO CARTA...
+</span>
+
+</div>
+
+
+<div class="right-footer">
+
+<span id="tcgCardName">
+TCG CARD
+</span>
+
+<strong id="tcgCardId">
+---
+</strong>
+
+</div>
+
+
+</aside>
+
+
+
+</div>
+
+
+
+
+<footer class="card-footer">
+
+<span>
+POKÉAPI • TCGDEX
+</span>
+
+
+<div class="navigation">
+
+<button id="prevBtn">
+← ANTERIOR
+</button>
+
+<button id="nextBtn">
+PRÓXIMO →
+</button>
+
+</div>
+
+
+</footer>
+
+
+
+</section>
+
+
+
+
+<section class="quick-section">
+
+<div class="section-heading">
+<span>Cores por Tipo</span>
+</div>
+
+<div id="typeLegend" class="type-legend"></div>
+
+</section>
+
+
+</main>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
